@@ -12,7 +12,7 @@ interface Node {
   type: "user" | "contact"
   industry?: string
   warmScore?: number
-  emailStatus?: string
+  emailStatus?: "not_sent" | "draft" | "sent" | "opened" | "replied"
   company?: string
   role?: string
   email?: string

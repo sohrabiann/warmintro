@@ -55,7 +55,7 @@ export async function GET() {
     // Create contact nodes
     const contactNodes = contacts.map((contact) => {
       // Determine email status
-      let emailStatus = "not_sent"
+      let emailStatus: "not_sent" | "draft" | "sent" | "opened" | "replied" = "not_sent"
       const hasDraft = contact.emailDrafts.some((d) => d.status === "draft")
       const hasSent = contact.emailDrafts.some((d) => d.status === "sent")
       const tracking = contact.emailTracking[0]
