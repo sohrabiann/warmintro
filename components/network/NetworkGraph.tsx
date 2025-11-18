@@ -103,13 +103,13 @@ export default function NetworkGraph({
   onNodeClick,
   colorMode = "warmScore",
 }: NetworkGraphProps) {
-  const fgRef = useRef<ForceGraphMethods>()
+  const fgRef = useRef<ForceGraphMethods | undefined>(undefined)
   const [hoveredNode, setHoveredNode] = useState<Node | null>(null)
 
   const handleNodeClick = useCallback(
-    (node: Node) => {
+    (node: any) => {
       if (onNodeClick) {
-        onNodeClick(node)
+        onNodeClick(node as Node)
       }
     },
     [onNodeClick]
@@ -119,19 +119,20 @@ export default function NetworkGraph({
     <div className="w-full h-full relative">
       <ForceGraph2D
         ref={fgRef}
-        graphData={data}
-        nodeLabel={(node: Node) => {
-          if (node.type === "user") return node.name
-          return `${node.name}\n${node.company || ""}\nWarm Score: ${node.warmScore || 0}%`
+        graphData={data as any}
+        nodeLabel={(node: any) => {
+          const n = node as Node
+          if (n.type === "user") return n.name
+          return `${n.name}\n${n.company || ""}\nWarm Score: ${n.warmScore || 0}%`
         }}
-        nodeColor={(node: Node) => getNodeColor(node, colorMode)}
-        nodeVal={(node: Node) => node.size || 10}
+        nodeColor={(node: any) => getNodeColor(node as Node, colorMode)}
+        nodeVal={(node: any) => (node as Node).size || 10}
         linkColor={() => "rgba(156, 163, 175, 0.3)"}
-        linkWidth={(link: Link) => (link.strength || 0.5) * 2}
+        linkWidth={(link: any) => ((link as Link).strength || 0.5) * 2}
         linkDirectionalArrowLength={6}
         linkDirectionalArrowRelPos={1}
         onNodeClick={handleNodeClick}
-        onNodeHover={(node: Node | null) => setHoveredNode(node)}
+        onNodeHover={(node: any) => setHoveredNode(node ? (node as Node) : null)}
         cooldownTicks={100}
         onEngineStop={() => {
           // Auto-zoom to fit after simulation stops
@@ -142,16 +143,17 @@ export default function NetworkGraph({
           }, 100)
         }}
         nodeCanvasObjectMode={() => "after"}
-        nodeCanvasObject={(node: Node, ctx: CanvasRenderingContext2D, globalScale: number) => {
+        nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
           // Draw node label
-          const label = node.name
-          const fontSize = node.type === "user" ? 14 : 10
+          const n = node as Node
+          const label = n.name
+          const fontSize = n.type === "user" ? 14 : 10
           ctx.font = `${fontSize}px Sans-Serif`
           ctx.textAlign = "center"
           ctx.textBaseline = "middle"
           ctx.fillStyle = "#374151"
-          const x = node.x || 0
-          const y = (node.y || 0) + (node.size || 10) + 5
+          const x = n.x || 0
+          const y = (n.y || 0) + (n.size || 10) + 5
           ctx.fillText(label, x, y)
         }}
       />
