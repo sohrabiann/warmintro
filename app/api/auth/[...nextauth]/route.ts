@@ -38,11 +38,11 @@ const authOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user, account, profile }: any) {
       // Allow sign in
       return true
     },
-    async jwt({ token, user, account, profile }) {
+    async jwt({ token, user, account, profile }: any) {
       // Initial sign in
       if (user) {
         token.id = user.id
