@@ -8,6 +8,10 @@ import { NextRequest, NextResponse } from "next/server"
 const linkedinClientId = process.env.LINKEDIN_CLIENT_ID
 const linkedinClientSecret = process.env.LINKEDIN_CLIENT_SECRET
 const nextAuthSecret = process.env.NEXTAUTH_SECRET
+const isProduction = process.env.NODE_ENV === "production"
+const stateCookieName = isProduction ? "__Secure-next-auth.state" : "next-auth.state"
+const pkceCookieName = isProduction ? "__Secure-next-auth.pkce.code_verifier" : "next-auth.pkce.code_verifier"
+const stateCookieSameSite: "none" | "lax" = isProduction ? "none" : "lax"
 
 if (!linkedinClientId || !linkedinClientSecret) {
   throw new Error("Missing LinkedIn OAuth credentials. Please set LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET")
@@ -48,6 +52,12 @@ const maskValue = (value?: string | null) => {
 const extractCookieNames = (request: NextRequest) =>
   request.cookies.getAll().map((cookie) => cookie.name)
 
+const previewCookieValue = (value?: string | null) => {
+  if (!value) return null
+  if (value.length <= 8) return "***"
+  return `${value.slice(0, 4)}...${value.slice(-4)}`
+}
+
 // NextAuth configuration
 // Using JWT sessions - adapter disabled to avoid configuration errors
 // We'll manage users manually in the JWT callback
@@ -58,6 +68,28 @@ const authOptions = {
   },
   trustHost: true, // Automatically detect host from request headers (required for Vercel)
   secret: nextAuthSecret,
+  cookies: {
+    state: {
+      name: stateCookieName,
+      options: {
+        httpOnly: true,
+        sameSite: stateCookieSameSite,
+        path: "/",
+        secure: isProduction,
+        maxAge: 60 * 15,
+      },
+    },
+    pkceCodeVerifier: {
+      name: pkceCookieName,
+      options: {
+        httpOnly: true,
+        sameSite: stateCookieSameSite,
+        path: "/",
+        secure: isProduction,
+        maxAge: 60 * 15,
+      },
+    },
+  },
   // Let NextAuth handle cookies automatically - it will use secure cookies in production
   providers: [
     LinkedInProvider({
@@ -189,6 +221,27 @@ async function handleRequest(
   request: NextRequest,
   handler: (request: NextRequest) => Promise<Response>
 ): Promise<Response> {
+  const pathname = request.nextUrl.pathname
+  const isCallbackRoute = pathname.includes("/api/auth/callback/")
+  if (isCallbackRoute) {
+    const stateCookie =
+      request.cookies.get(stateCookieName)?.value ??
+      request.cookies.get("next-auth.state")?.value ??
+      request.cookies.get("__Secure-next-auth.state")?.value
+    const pkceCookie =
+      request.cookies.get(pkceCookieName)?.value ??
+      request.cookies.get("next-auth.pkce.code_verifier")?.value ??
+      request.cookies.get("__Secure-next-auth.pkce.code_verifier")?.value
+    logAuthEvent("callback request received", {
+      pathname,
+      callbackParam: request.nextUrl.searchParams.get("callbackUrl"),
+      stateQueryPreview: maskValue(request.nextUrl.searchParams.get("state")),
+      hasStateCookie: Boolean(stateCookie),
+      stateCookiePreview: previewCookieValue(stateCookie),
+      hasPkceCookie: Boolean(pkceCookie),
+    })
+  }
+
   try {
     return await handler(request)
   } catch (error: any) {
