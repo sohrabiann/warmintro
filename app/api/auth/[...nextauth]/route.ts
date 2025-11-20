@@ -24,7 +24,7 @@ const authOptions = {
   session: {
     strategy: "jwt" as const,
   },
-  trustHost: true,
+  trustHost: true, // Automatically detect host from request headers
   secret: nextAuthSecret,
   providers: [
     LinkedInProvider({
