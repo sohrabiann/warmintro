@@ -44,22 +44,21 @@ const authOptions = {
       return true
     },
     async jwt({ token, user, account, profile }: any) {
-      // Initial sign in
+      // Initial sign in - set user data in token
       if (user) {
-        token.id = user.id
         token.email = user.email
         token.name = user.name
         token.picture = user.image
       }
       
-      // Update user in database after LinkedIn OAuth (non-blocking)
+      // Update user in database after LinkedIn OAuth (fully non-blocking)
       // Only run on initial sign-in (when account exists)
       if (account?.provider === "linkedin" && user?.email && account?.access_token) {
-        // Run database update in background - don't block auth flow
-        // Use setTimeout to ensure it doesn't block the response
+        // Run database update in background - don't block auth flow at all
+        // Use setTimeout to ensure it runs after the response is sent
         setTimeout(async () => {
           try {
-            await prisma.user.upsert({
+            const dbUser = await prisma.user.upsert({
               where: { email: user.email },
               update: {
                 linkedinId: account.providerAccountId,
@@ -75,6 +74,8 @@ const authOptions = {
                 image: user.image || undefined,
               },
             })
+            // Store user ID in token for future requests
+            token.id = dbUser.id
           } catch (error: any) {
             // Log error but don't fail the auth flow
             console.error("Error updating user in database:", error?.message || error)
