@@ -99,9 +99,38 @@ const authOptions = {
   debug: process.env.NODE_ENV === "development",
 }
 
-// Initialize NextAuth
-const nextAuth = NextAuth(authOptions)
+// Initialize NextAuth with error handling
+let nextAuth: ReturnType<typeof NextAuth>
+try {
+  nextAuth = NextAuth(authOptions)
+} catch (error: any) {
+  console.error("NextAuth initialization error:", error)
+  throw new Error(`NextAuth configuration error: ${error.message}`)
+}
 
 export const { handlers, auth, signIn, signOut } = nextAuth
-export const { GET, POST } = handlers
+
+// Wrap handlers with error logging
+const originalGET = handlers.GET
+const originalPOST = handlers.POST
+
+export const GET = async (req: Request) => {
+  try {
+    return await originalGET(req)
+  } catch (error: any) {
+    console.error("NextAuth GET handler error:", error)
+    console.error("Error stack:", error.stack)
+    throw error
+  }
+}
+
+export const POST = async (req: Request) => {
+  try {
+    return await originalPOST(req)
+  } catch (error: any) {
+    console.error("NextAuth POST handler error:", error)
+    console.error("Error stack:", error.stack)
+    throw error
+  }
+}
 
