@@ -51,28 +51,28 @@ const authOptions = {
         token.picture = user.image
       }
       
-      // Update user in database after LinkedIn OAuth
-      if (account?.provider === "linkedin" && user?.email) {
-        try {
-          await prisma.user.upsert({
-            where: { email: user.email },
-            update: {
-              linkedinId: account.providerAccountId,
-              linkedinUrl: (profile as any)?.url,
-              name: user.name || undefined,
-              image: user.image || undefined,
-            },
-            create: {
-              email: user.email!,
-              linkedinId: account.providerAccountId,
-              linkedinUrl: (profile as any)?.url,
-              name: user.name || undefined,
-              image: user.image || undefined,
-            },
-          })
-        } catch (error) {
+      // Update user in database after LinkedIn OAuth (non-blocking)
+      if (account?.provider === "linkedin" && user?.email && account?.access_token) {
+        // Don't await - let it run in background to avoid blocking the auth flow
+        prisma.user.upsert({
+          where: { email: user.email },
+          update: {
+            linkedinId: account.providerAccountId,
+            linkedinUrl: (profile as any)?.url,
+            name: user.name || undefined,
+            image: user.image || undefined,
+          },
+          create: {
+            email: user.email!,
+            linkedinId: account.providerAccountId,
+            linkedinUrl: (profile as any)?.url,
+            name: user.name || undefined,
+            image: user.image || undefined,
+          },
+        }).catch((error) => {
+          // Log error but don't fail the auth flow
           console.error("Error updating user in database:", error)
-        }
+        })
       }
       
       return token
