@@ -1,7 +1,7 @@
 "use client"
 
 import { Suspense, useState } from "react"
-import { signIn } from "next-auth/react"
+import { signIn, type SignInResponse } from "next-auth/react"
 import { useSearchParams } from "next/navigation"
 
 function SignInContent() {
@@ -20,17 +20,26 @@ function SignInContent() {
     try {
       const result = await signIn("linkedin", { 
         callbackUrl,
-        redirect: true,
-      })
+        redirect: false,
+      }) as SignInResponse | undefined
       
-      // If signIn returns an error, it means something went wrong
       if (result?.error) {
         setLocalError(result.error)
         setIsLoading(false)
+        return
       }
-    } catch (err: any) {
+      
+      if (result?.url) {
+        window.location.href = result.url
+        return
+      }
+      
+      // If no redirect happened, reset loading state
+      setIsLoading(false)
+    } catch (err: unknown) {
       console.error("Sign in error:", err)
-      setLocalError(err?.message || "Failed to sign in. Please try again.")
+      const message = err instanceof Error ? err.message : "Failed to sign in. Please try again."
+      setLocalError(message)
       setIsLoading(false)
     }
   }

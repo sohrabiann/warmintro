@@ -31,6 +31,23 @@ if (process.env.NODE_ENV === "production") {
   console.log("[NextAuth] Secret loaded - length:", nextAuthSecret.length)
 }
 
+const logAuthEvent = (event: string, payload?: Record<string, unknown>) => {
+  try {
+    console.log(`[NextAuth] ${event}`, payload ?? {})
+  } catch {
+    // ignore logging errors
+  }
+}
+
+const maskValue = (value?: string | null) => {
+  if (!value) return null
+  if (value.length <= 8) return "***"
+  return `${value.slice(0, 4)}...${value.slice(-4)}`
+}
+
+const extractCookieNames = (request: NextRequest) =>
+  request.cookies.getAll().map((cookie) => cookie.name)
+
 // NextAuth configuration
 // Using JWT sessions - adapter disabled to avoid configuration errors
 // We'll manage users manually in the JWT callback
@@ -55,10 +72,19 @@ const authOptions = {
   ],
   callbacks: {
     async signIn({ user, account, profile }: any) {
+      logAuthEvent("signIn callback", {
+        provider: account?.provider,
+        hasEmail: Boolean(user?.email),
+      })
       // Allow sign in - don't block on database operations
       return true
     },
     async jwt({ token, user, account, profile }: any) {
+      logAuthEvent("jwt callback", {
+        hasUser: Boolean(user),
+        provider: account?.provider,
+        hasExistingTokenId: Boolean(token?.id),
+      })
       // Initial sign in - set user data in token
       if (user) {
         token.email = user.email
@@ -93,7 +119,7 @@ const authOptions = {
             token.id = dbUser.id
           } catch (error: any) {
             // Log error but don't fail the auth flow
-            console.error("Error updating user in database:", error?.message || error)
+            console.error("[NextAuth] Error updating user in database:", error?.message || error)
           }
         }, 0)
       }
@@ -111,6 +137,11 @@ const authOptions = {
           session.user.name = token.name as string
           session.user.image = token.picture as string
         }
+        logAuthEvent("session callback", {
+          hasUser: Boolean(session?.user),
+          hasTokenId: Boolean(token.id),
+          hasEmail: Boolean(session?.user?.email),
+        })
         return session
       } catch (error: any) {
         // Log JWT decryption errors with more context
@@ -126,18 +157,14 @@ const authOptions = {
   },
   events: {
     async signIn({ user, account, isNewUser }: any) {
-      if (process.env.NODE_ENV === "development") {
-        console.log("[NextAuth] Sign in successful:", {
-          email: user?.email,
-          provider: account?.provider,
-          isNewUser,
-        })
-      }
+      logAuthEvent("signIn event", {
+        provider: account?.provider,
+        isNewUser,
+        hasEmail: Boolean(user?.email),
+      })
     },
     async signOut() {
-      if (process.env.NODE_ENV === "development") {
-        console.log("[NextAuth] Sign out")
-      }
+      logAuthEvent("signOut event")
     },
   },
   pages: {
@@ -167,15 +194,23 @@ async function handleRequest(
   } catch (error: any) {
     // Check if it's a JWT decryption error
     if (error?.message?.includes("decryption") || error?.message?.includes("JWTSessionError")) {
+      const requestUrl = new URL(request.url)
+      const callbackParam = requestUrl.searchParams.get("callbackUrl")
+      const stateParam = requestUrl.searchParams.get("state")
+      const cookieNames = extractCookieNames(request)
+
       console.error("[NextAuth] JWT Decryption Error:", {
         message: error?.message,
         cause: error?.cause?.message,
         url: request.url,
+        callbackUrlParam: callbackParam,
+        statePreview: maskValue(stateParam),
+        cookieNames,
       })
       
       // Clear invalid session cookies
       const response = NextResponse.next()
-      const cookieNames = [
+      const cookieNamesToClear = [
         "next-auth.session-token",
         "__Secure-next-auth.session-token",
         "next-auth.csrf-token",
@@ -188,7 +223,7 @@ async function handleRequest(
         "__Secure-next-auth.state",
       ]
       
-      cookieNames.forEach((name) => {
+      cookieNamesToClear.forEach((name) => {
         response.cookies.delete(name)
         // Also try with path variations
         response.cookies.set(name, "", {
@@ -206,7 +241,7 @@ async function handleRequest(
         signInUrl.searchParams.set("error_description", "Session expired. Please sign in again.")
         const redirectResponse = NextResponse.redirect(signInUrl)
         // Clear cookies in redirect response too
-        cookieNames.forEach((name) => {
+        cookieNamesToClear.forEach((name) => {
           redirectResponse.cookies.delete(name)
           redirectResponse.cookies.set(name, "", {
             expires: new Date(0),

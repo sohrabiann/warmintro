@@ -1,27 +1,38 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
-export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
+const PUBLIC_PATH_PREFIXES = ["/", "/auth", "/api"]
+const DEBUG_MIDDLEWARE = process.env.NEXT_PUBLIC_MIDDLEWARE_DEBUG === "true"
 
-  // Public routes - allow access
-  if (pathname === "/" || pathname.startsWith("/auth/") || pathname.startsWith("/api/")) {
+export async function middleware(request: NextRequest) {
+  const { pathname, search } = request.nextUrl
+
+  const isPublic = PUBLIC_PATH_PREFIXES.some((prefix) =>
+    pathname === prefix || pathname.startsWith(`${prefix}/`)
+  )
+
+  if (isPublic) {
     return NextResponse.next()
   }
 
-  // For protected routes, check for session token
-  // The actual authentication will be verified in the page components
-  const sessionToken = request.cookies.get("next-auth.session-token")?.value || 
-                       request.cookies.get("__Secure-next-auth.session-token")?.value
+  const sessionToken =
+    request.cookies.get("next-auth.session-token")?.value ||
+    request.cookies.get("__Secure-next-auth.session-token")?.value
 
-  // If no session token, redirect to sign in
   if (!sessionToken) {
     const signInUrl = new URL("/auth/signin", request.url)
-    signInUrl.searchParams.set("callbackUrl", pathname)
+    const callbackDestination = `${pathname}${search}` || "/"
+    signInUrl.searchParams.set("callbackUrl", callbackDestination)
+
+    if (DEBUG_MIDDLEWARE) {
+      console.log("[Middleware] Redirecting to sign-in", {
+        callbackDestination,
+      })
+    }
+
     return NextResponse.redirect(signInUrl)
   }
 
-  // Let the page components handle onboarding checks
   return NextResponse.next()
 }
 
