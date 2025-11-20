@@ -100,9 +100,9 @@ const authOptions = {
           scope: "openid profile email",
         },
       },
-      // Temporarily disable NextAuth checks because Edge is stripping the PKCE cookie.
+      // Temporarily disable NextAuth checks because Edge is stripping the PKCE cookie/state cookies.
       // We'll rely on LinkedIn verifying the redirect URI + client secret until we can restore PKCE/state.
-      checks: [],
+      checks: ["none"],
     }),
   ],
   callbacks: {
