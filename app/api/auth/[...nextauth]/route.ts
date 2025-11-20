@@ -87,7 +87,10 @@ const authOptions = {
     },
     async session({ session, token }: any) {
       if (session?.user && token) {
-        session.user.id = token.id as string
+        // Only set id if it exists in token
+        if (token.id) {
+          session.user.id = token.id as string
+        }
         session.user.email = token.email as string
         session.user.name = token.name as string
         session.user.image = token.picture as string
