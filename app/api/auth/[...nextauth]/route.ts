@@ -25,68 +25,9 @@ const authOptions = {
   session: {
     strategy: "jwt" as const,
   },
-  trustHost: true, // Automatically detect host from request headers
+  trustHost: true, // Automatically detect host from request headers (required for Vercel)
   secret: nextAuthSecret,
-  // Configure cookies for production HTTPS
-  cookies: {
-    sessionToken: {
-      name: process.env.NODE_ENV === "production" 
-        ? "__Secure-next-auth.session-token" 
-        : "next-auth.session-token",
-      options: {
-        httpOnly: true,
-        sameSite: "lax" as const,
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-      },
-    },
-    callbackUrl: {
-      name: process.env.NODE_ENV === "production"
-        ? "__Secure-next-auth.callback-url"
-        : "next-auth.callback-url",
-      options: {
-        httpOnly: true,
-        sameSite: "lax" as const,
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-      },
-    },
-    csrfToken: {
-      name: process.env.NODE_ENV === "production"
-        ? "__Host-next-auth.csrf-token"
-        : "next-auth.csrf-token",
-      options: {
-        httpOnly: true,
-        sameSite: "lax" as const,
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-      },
-    },
-    pkceCodeVerifier: {
-      name: process.env.NODE_ENV === "production"
-        ? "__Secure-next-auth.pkce.code_verifier"
-        : "next-auth.pkce.code_verifier",
-      options: {
-        httpOnly: true,
-        sameSite: "lax" as const,
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 60 * 15, // 15 minutes
-      },
-    },
-    state: {
-      name: process.env.NODE_ENV === "production"
-        ? "__Secure-next-auth.state"
-        : "next-auth.state",
-      options: {
-        httpOnly: true,
-        sameSite: "lax" as const,
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 60 * 15, // 15 minutes
-      },
-    },
-  },
+  // Let NextAuth handle cookies automatically - it will use secure cookies in production
   providers: [
     LinkedInProvider({
       clientId: linkedinClientId,
