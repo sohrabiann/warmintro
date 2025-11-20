@@ -18,7 +18,7 @@ export async function GET() {
     }
 
     const onboardingComplete =
-      !!user.targetIndustry && !!user.university && !!user.targetSeniority
+      !!user.targetIndustry && !!user.university && !!user.targetJobRole
 
     return NextResponse.json({ onboardingComplete })
   } catch (error) {

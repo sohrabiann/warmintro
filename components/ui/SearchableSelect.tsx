@@ -93,32 +93,31 @@ export function SearchableSelect({
                 onFocus={handleFocus}
                 placeholder={placeholder}
                 disabled={disabled}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder:text-gray-400 disabled:bg-gray-100 disabled:text-gray-500"
+                className="searchable-select-input"
             />
 
             {/* Dropdown Arrow Icon */}
-            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none text-gray-400">
+            <div className="searchable-select-arrow">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
             </div>
 
             {isOpen && !disabled && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto">
+                <div className="searchable-select-dropdown">
                     {filteredOptions.length > 0 ? (
                         filteredOptions.map((option) => (
                             <button
                                 key={option}
                                 type="button"
                                 onClick={() => handleOptionClick(option)}
-                                className={`w-full text-left px-4 py-2 hover:bg-blue-50 transition-colors ${value === option ? "bg-blue-50 text-blue-700 font-medium" : "text-gray-700"
-                                    }`}
+                                className={`searchable-select-option ${value === option ? "searchable-select-option-selected" : ""}`}
                             >
                                 {option}
                             </button>
                         ))
                     ) : (
-                        <div className="px-4 py-2 text-gray-500 text-sm">No results found</div>
+                        <div className="searchable-select-no-results">No results found</div>
                     )}
                 </div>
             )}

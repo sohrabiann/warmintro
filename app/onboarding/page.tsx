@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { SearchableSelect } from "@/components/ui/SearchableSelect"
 import { INDUSTRIES, INDUSTRIES_DATA } from "@/lib/data/industries"
+import "./onboarding.css"
 
 const COMMON_INTERESTS = [
   "Basketball",
@@ -108,7 +109,8 @@ export default function OnboardingPage() {
 
       if (!response.ok) throw new Error("Failed to save onboarding data")
 
-      router.push("/dashboard")
+      // Use replace instead of push to avoid back button issues
+      router.replace("/dashboard")
     } catch (error) {
       console.error("Error:", error)
       alert("Failed to save. Please try again.")
@@ -119,31 +121,36 @@ export default function OnboardingPage() {
 
   if (initialLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-lg text-gray-600">Loading profile...</div>
+      <div className="onboarding-page">
+        <div className="onboarding-glow"></div>
+        <div className="onboarding-loading">
+          <div className="onboarding-loading-text">Loading profile...</div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+    <div className="onboarding-page">
+      <div className="onboarding-glow"></div>
+      
+      <div className="onboarding-container">
+        <div className="onboarding-card">
+          <div className="onboarding-header">
+            <h1 className="onboarding-title">
               {isEditing ? "Update your profile" : "Welcome to WarmIntro!"}
             </h1>
-            <p className="text-gray-600">
+            <p className="onboarding-subtitle">
               {isEditing
                 ? "Update your details to find better connections"
                 : "Let's set up your profile to find the best connections"}
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="onboarding-form">
             {/* Target Industry */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="onboarding-field">
+              <label className="onboarding-label">
                 Target Industry *
               </label>
               <SearchableSelect
@@ -155,8 +162,8 @@ export default function OnboardingPage() {
             </div>
 
             {/* Target Job Role */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="onboarding-field">
+              <label className="onboarding-label">
                 Target Job Role *
               </label>
               <SearchableSelect
@@ -173,8 +180,8 @@ export default function OnboardingPage() {
             </div>
 
             {/* University */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="onboarding-field">
+              <label className="onboarding-label">
                 University *
               </label>
               <input
@@ -185,13 +192,13 @@ export default function OnboardingPage() {
                   setFormData({ ...formData, university: e.target.value })
                 }
                 placeholder="e.g., University of Western Ontario"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder:text-gray-400"
+                className="onboarding-input"
               />
             </div>
 
             {/* Graduation Year */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="onboarding-field">
+              <label className="onboarding-label">
                 Graduation Year *
               </label>
               <input
@@ -206,24 +213,24 @@ export default function OnboardingPage() {
                     graduationYear: parseInt(e.target.value),
                   })
                 }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                className="onboarding-input"
               />
             </div>
 
             {/* Interests */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="onboarding-field">
+              <label className="onboarding-label">
                 Interests (select all that apply)
               </label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="onboarding-interests-grid">
                 {COMMON_INTERESTS.map((interest) => (
                   <button
                     key={interest}
                     type="button"
                     onClick={() => handleInterestToggle(interest)}
-                    className={`px-4 py-2 rounded-lg border transition-colors ${formData.interests.includes(interest)
-                        ? "bg-blue-500 text-white border-blue-500"
-                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                    className={`onboarding-interest-btn ${formData.interests.includes(interest)
+                        ? "onboarding-interest-btn-active"
+                        : "onboarding-interest-btn-inactive"
                       }`}
                   >
                     {interest}
@@ -236,7 +243,7 @@ export default function OnboardingPage() {
             <button
               type="submit"
               disabled={loading || !formData.targetIndustry || !formData.targetJobRole}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="onboarding-submit-btn"
             >
               {loading ? "Saving..." : "Complete Setup"}
             </button>
