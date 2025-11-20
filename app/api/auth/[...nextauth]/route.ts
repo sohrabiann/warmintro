@@ -39,7 +39,7 @@ const authOptions = {
   ],
   callbacks: {
     async signIn({ user, account, profile }: any) {
-      // Allow sign in
+      // Allow sign in - don't block on database operations
       return true
     },
     async jwt({ token, user, account, profile }: any) {
@@ -52,27 +52,33 @@ const authOptions = {
       }
       
       // Update user in database after LinkedIn OAuth (non-blocking)
+      // Only run on initial sign-in (when account exists)
       if (account?.provider === "linkedin" && user?.email && account?.access_token) {
-        // Don't await - let it run in background to avoid blocking the auth flow
-        prisma.user.upsert({
-          where: { email: user.email },
-          update: {
-            linkedinId: account.providerAccountId,
-            linkedinUrl: (profile as any)?.url,
-            name: user.name || undefined,
-            image: user.image || undefined,
-          },
-          create: {
-            email: user.email!,
-            linkedinId: account.providerAccountId,
-            linkedinUrl: (profile as any)?.url,
-            name: user.name || undefined,
-            image: user.image || undefined,
-          },
-        }).catch((error) => {
-          // Log error but don't fail the auth flow
-          console.error("Error updating user in database:", error)
-        })
+        // Run database update in background - don't block auth flow
+        // Use setTimeout to ensure it doesn't block the response
+        setTimeout(async () => {
+          try {
+            await prisma.user.upsert({
+              where: { email: user.email },
+              update: {
+                linkedinId: account.providerAccountId,
+                linkedinUrl: (profile as any)?.url,
+                name: user.name || undefined,
+                image: user.image || undefined,
+              },
+              create: {
+                email: user.email!,
+                linkedinId: account.providerAccountId,
+                linkedinUrl: (profile as any)?.url,
+                name: user.name || undefined,
+                image: user.image || undefined,
+              },
+            })
+          } catch (error: any) {
+            // Log error but don't fail the auth flow
+            console.error("Error updating user in database:", error?.message || error)
+          }
+        }, 0)
       }
       
       return token
