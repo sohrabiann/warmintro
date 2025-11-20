@@ -27,7 +27,10 @@ const authOptions = {
   },
   trustHost: true, // Automatically detect host from request headers
   secret: nextAuthSecret,
-  useSecureCookies: process.env.NODE_ENV === "production",
+  // Explicitly set the base URL to ensure state cookies work correctly
+  basePath: "/api/auth",
+  // Ensure we use the correct URL for callbacks
+  ...(process.env.NEXTAUTH_URL && { url: process.env.NEXTAUTH_URL }),
   providers: [
     LinkedInProvider({
       clientId: linkedinClientId,
