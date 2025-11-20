@@ -173,13 +173,52 @@ async function handleRequest(
         url: request.url,
       })
       
+      // Clear invalid session cookies
+      const response = NextResponse.next()
+      const cookieNames = [
+        "next-auth.session-token",
+        "__Secure-next-auth.session-token",
+        "next-auth.csrf-token",
+        "__Host-next-auth.csrf-token",
+        "next-auth.callback-url",
+        "__Secure-next-auth.callback-url",
+        "next-auth.pkce.code_verifier",
+        "__Secure-next-auth.pkce.code_verifier",
+        "next-auth.state",
+        "__Secure-next-auth.state",
+      ]
+      
+      cookieNames.forEach((name) => {
+        response.cookies.delete(name)
+        // Also try with path variations
+        response.cookies.set(name, "", {
+          expires: new Date(0),
+          path: "/",
+          secure: true,
+          sameSite: "lax",
+        })
+      })
+      
       // If it's a callback request, redirect to sign-in with error
       if (request.url.includes("/callback/")) {
         const signInUrl = new URL("/auth/signin", request.url)
         signInUrl.searchParams.set("error", "SessionError")
         signInUrl.searchParams.set("error_description", "Session expired. Please sign in again.")
-        return NextResponse.redirect(signInUrl)
+        const redirectResponse = NextResponse.redirect(signInUrl)
+        // Clear cookies in redirect response too
+        cookieNames.forEach((name) => {
+          redirectResponse.cookies.delete(name)
+          redirectResponse.cookies.set(name, "", {
+            expires: new Date(0),
+            path: "/",
+            secure: true,
+            sameSite: "lax",
+          })
+        })
+        return redirectResponse
       }
+      
+      return response
     }
     // Re-throw other errors
     throw error
