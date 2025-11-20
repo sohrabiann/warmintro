@@ -27,6 +27,7 @@ const authOptions = {
   },
   trustHost: true, // Automatically detect host from request headers
   secret: nextAuthSecret,
+  useSecureCookies: process.env.NODE_ENV === "production",
   providers: [
     LinkedInProvider({
       clientId: linkedinClientId,
