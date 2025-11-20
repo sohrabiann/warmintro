@@ -100,6 +100,7 @@ const authOptions = {
           scope: "openid profile email",
         },
       },
+      checks: ["pkce"],
     }),
   ],
   callbacks: {
