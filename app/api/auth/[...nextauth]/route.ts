@@ -11,7 +11,7 @@ const nextAuthSecret = process.env.NEXTAUTH_SECRET
 const isProduction = process.env.NODE_ENV === "production"
 const stateCookieName = isProduction ? "__Secure-next-auth.state" : "next-auth.state"
 const pkceCookieName = isProduction ? "__Secure-next-auth.pkce.code_verifier" : "next-auth.pkce.code_verifier"
-const stateCookieSameSite: "none" | "lax" = isProduction ? "none" : "lax"
+const stateCookieSameSite: "lax" = "lax"
 
 if (!linkedinClientId || !linkedinClientSecret) {
   throw new Error("Missing LinkedIn OAuth credentials. Please set LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET")
