@@ -2,6 +2,7 @@ import NextAuth from "next-auth"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import LinkedInProvider from "next-auth/providers/linkedin"
 import { prisma } from "@/lib/prisma"
+import type { NextRequest } from "next/server"
 
 // Validate environment variables
 const linkedinClientId = process.env.LINKEDIN_CLIENT_ID
@@ -110,27 +111,6 @@ try {
 
 export const { handlers, auth, signIn, signOut } = nextAuth
 
-// Wrap handlers with error logging
-const originalGET = handlers.GET
-const originalPOST = handlers.POST
-
-export const GET = async (req: Request) => {
-  try {
-    return await originalGET(req)
-  } catch (error: any) {
-    console.error("NextAuth GET handler error:", error)
-    console.error("Error stack:", error.stack)
-    throw error
-  }
-}
-
-export const POST = async (req: Request) => {
-  try {
-    return await originalPOST(req)
-  } catch (error: any) {
-    console.error("NextAuth POST handler error:", error)
-    console.error("Error stack:", error.stack)
-    throw error
-  }
-}
+// Export handlers directly - error logging is handled by NextAuth internally
+export const { GET, POST } = handlers
 
