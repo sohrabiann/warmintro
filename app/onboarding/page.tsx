@@ -1,27 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
-
-const INDUSTRIES = [
-  "Technology",
-  "Finance",
-  "Consulting",
-  "Healthcare",
-  "Marketing",
-  "Engineering",
-  "Design",
-  "Education",
-  "Real Estate",
-  "Other",
-]
-
-const SENIORITY_LEVELS = [
-  { value: "junior", label: "Junior (0-3 years)" },
-  { value: "mid", label: "Mid-level (3-7 years)" },
-  { value: "senior", label: "Senior (7+ years)" },
-]
+import { SearchableSelect } from "@/components/ui/SearchableSelect"
+import { INDUSTRIES, INDUSTRIES_DATA } from "@/lib/data/industries"
 
 const COMMON_INTERESTS = [
   "Basketball",
@@ -42,13 +25,66 @@ export default function OnboardingPage() {
   const { data: session } = useSession()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [initialLoading, setInitialLoading] = useState(true)
+  const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState({
     targetIndustry: "",
-    targetSeniority: "",
+    targetJobRole: "",
     interests: [] as string[],
     university: "",
     graduationYear: new Date().getFullYear(),
   })
+
+  const [availableRoles, setAvailableRoles] = useState<string[]>([])
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch("/api/onboarding")
+        if (response.ok) {
+          const data = await response.json()
+          // Only set data if it exists (user has completed onboarding before)
+          if (data.targetIndustry) {
+            setFormData({
+              targetIndustry: data.targetIndustry || "",
+              targetJobRole: data.targetJobRole || "",
+              interests: data.interests || [],
+              university: data.university || "",
+              graduationYear: data.graduationYear || new Date().getFullYear(),
+            })
+            setIsEditing(true)
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error)
+      } finally {
+        setInitialLoading(false)
+      }
+    }
+
+    if (session?.user) {
+      fetchUserData()
+    } else {
+      setInitialLoading(false)
+    }
+  }, [session])
+
+  // Update available roles when industry changes
+  useEffect(() => {
+    if (formData.targetIndustry && INDUSTRIES_DATA[formData.targetIndustry]) {
+      setAvailableRoles(INDUSTRIES_DATA[formData.targetIndustry])
+    } else {
+      setAvailableRoles([])
+    }
+  }, [formData.targetIndustry])
+
+  const handleIndustryChange = (industry: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      targetIndustry: industry,
+      targetJobRole: "", // Reset job role when industry changes
+    }))
+  }
 
   const handleInterestToggle = (interest: string) => {
     setFormData((prev) => ({
@@ -81,16 +117,26 @@ export default function OnboardingPage() {
     }
   }
 
+  if (initialLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-lg text-gray-600">Loading profile...</div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
       <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-lg shadow-lg p-8">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Welcome to WarmIntro!
+              {isEditing ? "Update your profile" : "Welcome to WarmIntro!"}
             </h1>
             <p className="text-gray-600">
-              Let's set up your profile to find the best connections
+              {isEditing
+                ? "Update your details to find better connections"
+                : "Let's set up your profile to find the best connections"}
             </p>
           </div>
 
@@ -100,52 +146,30 @@ export default function OnboardingPage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Target Industry *
               </label>
-              <select
-                required
+              <SearchableSelect
+                options={INDUSTRIES}
                 value={formData.targetIndustry}
-                onChange={(e) =>
-                  setFormData({ ...formData, targetIndustry: e.target.value })
-                }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-              >
-                <option value="">Select an industry</option>
-                {INDUSTRIES.map((industry) => (
-                  <option key={industry} value={industry}>
-                    {industry}
-                  </option>
-                ))}
-              </select>
+                onChange={handleIndustryChange}
+                placeholder="Select or search industry..."
+              />
             </div>
 
-            {/* Target Seniority */}
+            {/* Target Job Role */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Target Seniority Level *
+                Target Job Role *
               </label>
-              <div className="space-y-2">
-                {SENIORITY_LEVELS.map((level) => (
-                  <label
-                    key={level.value}
-                    className="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50"
-                  >
-                    <input
-                      type="radio"
-                      name="seniority"
-                      value={level.value}
-                      checked={formData.targetSeniority === level.value}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          targetSeniority: e.target.value,
-                        })
-                      }
-                      className="mr-3"
-                      required
-                    />
-                    <span>{level.label}</span>
-                  </label>
-                ))}
-              </div>
+              <SearchableSelect
+                options={availableRoles}
+                value={formData.targetJobRole}
+                onChange={(role) => setFormData({ ...formData, targetJobRole: role })}
+                placeholder={
+                  formData.targetIndustry
+                    ? "Select or search job role..."
+                    : "Select an industry first"
+                }
+                disabled={!formData.targetIndustry}
+              />
             </div>
 
             {/* University */}
@@ -197,11 +221,10 @@ export default function OnboardingPage() {
                     key={interest}
                     type="button"
                     onClick={() => handleInterestToggle(interest)}
-                    className={`px-4 py-2 rounded-lg border transition-colors ${
-                      formData.interests.includes(interest)
+                    className={`px-4 py-2 rounded-lg border transition-colors ${formData.interests.includes(interest)
                         ? "bg-blue-500 text-white border-blue-500"
                         : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                    }`}
+                      }`}
                   >
                     {interest}
                   </button>
@@ -212,7 +235,7 @@ export default function OnboardingPage() {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !formData.targetIndustry || !formData.targetJobRole}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "Saving..." : "Complete Setup"}
@@ -223,4 +246,3 @@ export default function OnboardingPage() {
     </div>
   )
 }
-

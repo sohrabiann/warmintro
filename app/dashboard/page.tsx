@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useSession, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import "./dashboard.css"
 
 interface Contact {
   id: string
@@ -118,145 +119,148 @@ export default function DashboardPage() {
 
   if (status === "loading" || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
+      <div className="loading-state">
+        <div className="loading-text">Loading...</div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="dashboard-page">
+      <div className="dashboard-glow"></div>
+
       {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">WarmIntro</h1>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">
-                {session?.user?.name || session?.user?.email}
-              </span>
-              <button
-                onClick={() => signOut()}
-                className="text-sm text-gray-600 hover:text-gray-900"
-              >
-                Sign Out
-              </button>
-            </div>
+      <header className="dashboard-header">
+        <div className="dashboard-header-content">
+          <div className="dashboard-logo">
+            <div className="dashboard-logo-mark">W</div>
+            <div className="dashboard-logo-text">WarmIntro</div>
+          </div>
+          <div className="dashboard-user-info">
+            <Link href="/onboarding" className="text-sm text-gray-400 hover:text-white transition-colors mr-4">
+              Edit Profile
+            </Link>
+            <span className="dashboard-user-name">
+              {session?.user?.name || session?.user?.email}
+            </span>
+            <button
+              onClick={() => signOut()}
+              className="dashboard-sign-out"
+            >
+              Sign Out
+            </button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="dashboard-main">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="text-sm text-gray-600 mb-1">Contacts Found</div>
-            <div className="text-3xl font-bold text-gray-900">
+        <div className="stats-grid">
+          <div className="stat-card">
+            <div className="stat-label">Contacts Found</div>
+            <div className="stat-value">
               {stats.contactsRecommended}
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="text-sm text-gray-600 mb-1">Emails Drafted</div>
-            <div className="text-3xl font-bold text-gray-900">
+          <div className="stat-card">
+            <div className="stat-label">Emails Drafted</div>
+            <div className="stat-value">
               {stats.emailsDrafted}
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="text-sm text-gray-600 mb-1">Emails Sent</div>
-            <div className="text-3xl font-bold text-gray-900">
+          <div className="stat-card">
+            <div className="stat-label">Emails Sent</div>
+            <div className="stat-value">
               {stats.emailsSent}
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="text-sm text-gray-600 mb-1">Opened</div>
-            <div className="text-3xl font-bold text-gray-900">
+          <div className="stat-card">
+            <div className="stat-label">Opened</div>
+            <div className="stat-value">
               {stats.emailsOpened}
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="text-sm text-gray-600 mb-1">Replied</div>
-            <div className="text-3xl font-bold text-gray-900">
+          <div className="stat-card">
+            <div className="stat-label">Replied</div>
+            <div className="stat-value">
               {stats.emailsReplied}
             </div>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="mb-6 flex gap-4">
+        <div className="dashboard-actions">
           <button
             onClick={handleFindMatches}
             disabled={findingMatches}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn-gradient"
           >
             {findingMatches ? "Finding Matches..." : "Find New Matches"}
           </button>
           <Link
             href="/network"
-            className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors"
+            className="btn-secondary"
           >
             View Network Map
           </Link>
         </div>
 
         {/* Contacts List */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">
+        <div className="contacts-section">
+          <div className="contacts-header">
+            <h2 className="contacts-title">
               Your Warm Matches
             </h2>
           </div>
-          <div className="divide-y divide-gray-200">
+          <div>
             {contacts.length === 0 ? (
-              <div className="px-6 py-12 text-center">
-                <p className="text-gray-500 mb-4">
+              <div className="empty-state">
+                <p className="empty-state-text">
                   No matches yet. Click "Find New Matches" to get started!
                 </p>
               </div>
             ) : (
               contacts.map((contact) => (
-                <div key={contact.id} className="px-6 py-4 hover:bg-gray-50">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold text-gray-900">
+                <div key={contact.id} className="contact-card">
+                  <div className="contact-info">
+                    <div className="contact-details">
+                      <div className="contact-header">
+                        <h3 className="contact-name">
                           {contact.name}
                         </h3>
-                        <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded">
+                        <span className="match-badge">
                           {contact.warmScore}% Match
                         </span>
                       </div>
                       {contact.role && contact.company && (
-                        <p className="text-sm text-gray-600 mb-1">
+                        <p className="contact-role">
                           {contact.role} at {contact.company}
                         </p>
                       )}
                       {contact.email && (
-                        <p className="text-sm text-gray-500">{contact.email}</p>
+                        <p className="contact-email">{contact.email}</p>
                       )}
                       {contact.matchReasons.length > 0 && (
-                        <div className="mt-2">
-                          <p className="text-xs text-gray-500">
-                            {contact.matchReasons.join(" • ")}
-                          </p>
+                        <div className="contact-reasons">
+                          {contact.matchReasons.join(" • ")}
                         </div>
                       )}
                     </div>
-                    <div className="flex gap-2 ml-4">
+                    <div className="contact-actions">
                       {contact.emailDrafts &&
-                      contact.emailDrafts.some((d) => d.status === "draft") ? (
+                        contact.emailDrafts.some((d) => d.status === "draft") ? (
                         <Link
-                          href={`/emails/${
-                            contact.emailDrafts.find((d) => d.status === "draft")
-                              ?.id
-                          }`}
-                          className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 px-4 rounded-lg transition-colors"
+                          href={`/emails/${contact.emailDrafts.find((d) => d.status === "draft")
+                            ?.id
+                            }`}
+                          className="btn-small btn-view"
                         >
                           View Draft
                         </Link>
                       ) : (
                         <button
                           onClick={() => handleGenerateEmail(contact.id)}
-                          className="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold py-2 px-4 rounded-lg transition-colors"
+                          className="btn-small btn-generate"
                         >
                           Generate Email
                         </button>
@@ -272,4 +276,3 @@ export default function DashboardPage() {
     </div>
   )
 }
-

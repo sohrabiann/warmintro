@@ -20,7 +20,7 @@ model User {
   
   // Onboarding data
   targetIndustry    String?
-  targetSeniority  String? // "junior" | "mid" | "senior"
+  targetJobRole     String?
   interests        String[] // Array of interest tags
   university       String?
   graduationYear   Int?
