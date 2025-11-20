@@ -7,6 +7,8 @@ import { useSearchParams } from "next/navigation"
 function SignInContent() {
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard"
+  const error = searchParams.get("error")
+  const errorDescription = searchParams.get("error_description")
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -15,6 +17,21 @@ function SignInContent() {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">WarmIntro</h1>
           <p className="text-gray-600">AI-Powered Warm Networking</p>
         </div>
+        
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-800 font-medium">
+              {error === "SessionError" 
+                ? errorDescription || "Session expired. Please sign in again."
+                : "An error occurred during sign in. Please try again."}
+            </p>
+            {error === "SessionError" && (
+              <p className="text-xs text-red-600 mt-1">
+                Tip: Clear your browser cookies and try again.
+              </p>
+            )}
+          </div>
+        )}
         
         <div className="space-y-4">
           <button
