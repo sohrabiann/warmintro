@@ -5,7 +5,7 @@ const securityHeaders = [
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-eval' https://platform.linkedin.com https://static.licdn.com",
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://platform.linkedin.com https://static.licdn.com",
       "connect-src 'self' https://*.linkedin.com https://*.licdn.com https://api.openai.com https://supabase.co https://*.supabase.co",
       "img-src 'self' data: https://*.linkedin.com https://*.licdn.com https://images.unsplash.com",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
